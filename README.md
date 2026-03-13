@@ -78,7 +78,7 @@ Antes da automação, a API foi explorada manualmente via Postman para validaç�
 
 🔗 **[Acessar Workspace do Postman (Sidagro API Tests)](https://gustavo-almeida2-396174.postman.co/workspace/sidagro-api-tests~12f5caaf-5a81-4040-b3f9-474b7c2c8dbf/collection/53084778-da5b3b84-cee4-4726-8a4f-08da2730f404?action=share&creator=53084778&active-environment=53084778-8bc40b0d-165a-4615-850a-c3aa25d3e1fb)**
 
-![img.png](img.png)
+![Evidência de Execução no Postman](img.png)
 
 ### 📊 Comparativo: Execução Manual (Postman) x Automatizada (Java/RestAssured)
 
@@ -89,3 +89,65 @@ No entanto, a criação da suíte **Automatizada com Java e REST-assured** demon
 1. Executar o ciclo de vida completo de uma Praga (Create, Read, Update, Delete) em pouco mais de 1 segundo de forma invisível.
 2. Isolar os dados de payload em estruturas robustas (POJOs), garantindo a tipagem segura dos dados no Java.
 3. Eliminar a dependência de intervenção humana (clicar em *Send* sucessivamente), viabilizando futuramente a integração desses testes em uma pipeline de CI/CD (ex: GitLab CI), assegurando a prevenção imediata contra defeitos de regressão a cada nova atualização do sistema.
+
+Mandou muito bem nos logs, Gustavo! Esse nível de detalhamento é exatamente o que um revisor técnico busca. Como você tem um **Bug Report** no meio do seu README, a falha do teste `testWithoutLabels` (o "X" vermelho no print) não é um problema, mas sim a **prova** de que seu teste automatizado encontrou um erro no sistema.
+
+Aqui está a seção formatada para você copiar e colar. Recomendo colocar **ao final do README**, logo após a seção de comparativo Postman x Automação.
+
+---
+
+## 📊 Evidências de Execução
+
+A suíte de testes foi executada localmente utilizando o runner do JUnit 5. Abaixo, constam as evidências de sucesso e a captura do erro que originou o Bug Report.
+
+### 📸 Resumo da Execução (IDE)
+![Evidência de Execução](img_1.png)
+*Legenda: Execução completa da suíte. O teste `testWithoutLabels` falha conforme esperado, evidenciando o retorno 500 da API.*
+
+### 📄 Logs Detalhados por Cenário
+
+Abaixo, os logs capturados via console mostram a interação real com os endpoints:
+
+#### 1. Autenticação e Ciclo de Vida (CRUD)
+O sistema realiza o login e utiliza o token para criar, buscar, atualizar e deletar a praga.
+> **Status:** ✅ Sucesso
+```text
+HTTP/1.1 200 OK (Login realizado)
+{ "token": "eyJhbGciOi..." }
+
+HTTP/1.1 201 Created (POST /praga)
+{ "id": 38, "nomePopular": "Teste Popular", "status": "ATIVO" }
+
+HTTP/1.1 200 OK (GET /praga/38)
+HTTP/1.1 200 OK (PUT /praga/38 - Dados alterados)
+HTTP/1.1 204 No Content (DELETE /praga/38)
+HTTP/1.1 404 Not Found (GET /praga/38 - Teardown confirmado)
+```
+
+#### 2. Validação de Segurança (Sem Token)
+
+Tentativa de acesso sem credenciais válidas.
+
+> **Status:** ✅ Sucesso
+
+```text
+HTTP/1.1 403 Forbidden
+(Acesso negado conforme esperado)
+```
+
+#### 3. Validação de Regras de Negócio (Campos Inválidos)
+
+Envio de enumeração inexistente (`INVALIDO`).
+
+> **Status:** ❌ Falha (Bug Identificado)
+
+```text
+java.lang.AssertionError: Expected status code <400> but was <500>.
+{
+    "message": "Ocorreu um erro interno. Por favor, tente novamente mais tarde.",
+    "details": "JSON parse error: Cannot deserialize value of type ...Status from String \"INVALIDO\""
+}
+```
+
+---
+
